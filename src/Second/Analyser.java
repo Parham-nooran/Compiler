@@ -1,13 +1,14 @@
 package Second;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 
 public class Analyser {
-    private ArrayList<String> identifier;
+    private ArrayList<String> identifiers;
     private ArrayList<String> keywords;
     private ArrayList<String> separators;
     private ArrayList<String> operators;
@@ -19,9 +20,9 @@ public class Analyser {
     private boolean stringOn = false;
     private boolean charOn = false;
 
-    public Analyser(ArrayList<String> identifier, ArrayList<String> keywords, ArrayList<String> separators,
+    public Analyser(ArrayList<String> identifiers, ArrayList<String> keywords, ArrayList<String> separators,
                     ArrayList<String> operator, ArrayList<String> comments, File file) {
-        this.identifier = identifier;
+        this.identifiers = identifiers;
         this.keywords = keywords;
         this.separators = separators;
         this.operators = operator;
@@ -35,9 +36,9 @@ public class Analyser {
     private void scan(File file){
         try (
                 FileReader fileReader = new FileReader(file);
-                BufferedReader bufferedReader = new BufferedReader(fileReader);
+                BufferedReader bufferedReader = new BufferedReader(fileReader)
         ) {
-            for(int i=0;i<400;i++) {
+            while(true) {
                 bufferedReader.mark(1);
                 if(bufferedReader.read()==-1){
                     break;
@@ -76,14 +77,14 @@ public class Analyser {
                     }
                 }
                 temp += (char) input;
-
+                //System.out.println("Temp is "+ temp);
                 if (separators.contains(temp)) {
                     return new Token(TokenType.SEPARATOR, (char)input+"");
                 }
 
                 if (!temp.equals(setFlags(temp))) {
                     temp = setFlags(temp);
-                    break;
+                    continue;
                 }
                 if((!temp.equals(""))&&separators.contains((char)input+"")){
                     bufferedReader.reset();
@@ -94,12 +95,12 @@ public class Analyser {
                     temp = getTheNumber(bufferedReader, temp);
                     return new Token(TokenType.LITERAL, temp);
                 }
-                if((temp).matches("[-!%*^<>+/]")){// */;
+                if((temp).matches("[-!%*^<>+/|&]")){// */;
                     bufferedReader.mark(4);
                     temp+=((char)bufferedReader.read());
                     if (!temp.equals(setFlags(temp))) {
                         temp = setFlags(temp);
-                        break;
+                        continue;
                     }
                     if(temp.matches("<<|>>")){
                         bufferedReader.mark(2);
@@ -138,10 +139,10 @@ public class Analyser {
         if(keywords.contains(input)){
             return new Token(TokenType.KEYWORD, input);
         }
-        if(input.matches("^[a-zA-Z$_]+[a-zA-Z$_]*$")){
+        if(identifiers.contains(input)||input.matches("^[a-zA-Z$_]+[a-zA-Z$_]*$")){
             return new Token(TokenType.IDENTIFIER, input);
         }
-        if(input.matches("true|false|^[-+]?\\d*\\.?\\d+([eE][-+]?\\d+)?$")){
+        if(input.matches("null|true|false|^[-+]?\\d*\\.?\\d+([eE][-+]?\\d+)?$")){
             return new Token(TokenType.LITERAL, input);
         }
         return new Token(TokenType.UNDEFINED, input);
@@ -207,10 +208,13 @@ public class Analyser {
     private String getTheText(BufferedReader bufferedReader, String end) throws IOException {
         int input;
         String temp = "";
+        bufferedReader.mark(2);
         while (((input = bufferedReader.read())!=-1) &&
                 !(temp.endsWith(end)||(temp.endsWith("\n")&&(stringOn||charOn)))) {
             temp+=(char)input;
+            bufferedReader.mark(2);
         }
+        bufferedReader.reset();
         return temp;
     }
     private Token resetFlags(BufferedReader bufferedReader, String input){
@@ -226,7 +230,8 @@ public class Analyser {
         slashCommentOn = input.startsWith("//");
         starCommentOn = input.startsWith("/*");
         charOn = input.startsWith("'");
-        return input.replaceAll("(//)|(/\\*)|\"|'","");
+        return (stringOn||slashCommentOn||starCommentOn||charOn)?
+                input.replaceAll("(//)|(/\\*)|\"|'",""):input;
     }
 }
 /*
