@@ -8,20 +8,10 @@ public class Token {
         this.tokenType = tokenType;
         this.tokenValue = tokenValue;
     }
-
     public TokenType getTokenType() {
         return tokenType;
     }
-
-    public void setTokenType(TokenType tokenType) {
-        this.tokenType = tokenType;
-    }
-
     public String getTokenValue() {
         return tokenValue;
-    }
-
-    public void setTokenValue(String tokenValue) {
-        this.tokenValue = tokenValue;
     }
 }
