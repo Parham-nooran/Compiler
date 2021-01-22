@@ -46,8 +46,7 @@ public class Analyser {
                 bufferedReader.reset();
                 Token token = getNextToken(bufferedReader);
                 String tokenType = token.getTokenType().toString().toLowerCase();
-                System.out.println(token.getTokenValue()+" is "+(tokenType.substring(0, 1).
-                        matches("[iIoOaAuUeE]")?"an ":"a ") +tokenType);
+                System.out.println(token.getTokenValue()+" is "+tokenType);//(tokenType.substring(0, 1).matches("[iIoOaAuUeE]")?"an ":"a ") +
             }
         } catch (IOException e){
             System.out.println("Something went wrong while initializing the fileReader");
@@ -64,7 +63,6 @@ public class Analyser {
                     token = resetFlags(bufferedReader, temp);
                     return token;
                 }
-
                 bufferedReader.mark(4);
                 if((input = bufferedReader.read()) == -1){
                     break;
@@ -76,58 +74,14 @@ public class Analyser {
                         break;
                     }
                 }
-                temp += (char) input;
-                //System.out.println("Temp is "+ temp);
-                if (separators.contains(temp)) {
-                    return new Token(TokenType.SEPARATOR, (char)input+"");
+                if((token = checkItAll(bufferedReader, temp, input))!=null&&
+                        !(token.getTokenType().equals(TokenType.UNDEFINED))){
+                    return token;
                 }
-
-                if (!temp.equals(setFlags(temp))) {
-                    temp = setFlags(temp);
-                    continue;
-                }
-                if((!temp.equals(""))&&separators.contains((char)input+"")){
-                    bufferedReader.reset();
-                    temp = temp.substring(0, temp.length()-1);
+                if(token==null){
                     break;
                 }
-                if(temp.matches("^[-+]?\\d*\\.?\\d+([eE][-+]\\d+)?$")){
-                    temp = getTheNumber(bufferedReader, temp);
-                    return new Token(TokenType.LITERAL, temp);
-                }
-                if((temp).matches("[-!%*^<>+/|&]")){// */;
-                    bufferedReader.mark(4);
-                    temp+=((char)bufferedReader.read());
-                    if (!temp.equals(setFlags(temp))) {
-                        temp = setFlags(temp);
-                        continue;
-                    }
-                    if(temp.matches("<<|>>")){
-                        bufferedReader.mark(2);
-                        temp+=((char)bufferedReader.read());
-                        if(operators.contains(temp)){
-                            return new Token(TokenType.OPERATOR, temp);
-                        }
-                        temp = temp.substring(0, temp.length()-1);
-                        bufferedReader.reset();
-                    }
-                    if(operators.contains(temp)){
-                        return new Token(TokenType.OPERATOR, temp);
-                    }
-                    temp = temp.substring(0, temp.length()-1);
-                    bufferedReader.reset();
-                }
-
-                if(operators.contains(temp)){
-                    return new Token(TokenType.OPERATOR, temp);
-                }
-
-                if((!temp.equals(""))&&operators.contains((char)input+"")){
-                    bufferedReader.reset();
-                    temp = temp.substring(0, temp.length()-1);
-                    break;
-                }
-
+                temp = token.getTokenValue();
             }
         } catch (IOException e){
             System.out.println("Something went wrong while scanning the file");
@@ -153,21 +107,21 @@ public class Analyser {
         try {
             if (slashCommentOn) {
                 slashCommentOn = !(temp = getTheText(bufferedReader, "\n")).endsWith("\n");
-                return "//"+temp;
+                return temp;
             }
             if (starCommentOn) {
                 starCommentOn = !(temp = getTheText(bufferedReader, "*/")).endsWith("*/");
-                return "/*"+temp;
+                return temp;
             }
             if (stringOn) {
                 temp = getTheText(bufferedReader, "\"");
                 stringOn = false;//!(temp = getTheText(fileReader, "\"")).endsWith("\"");
-                return "\""+temp;
+                return temp;
             }
             if(charOn){
                 temp = getTheText(bufferedReader, "'");
                 charOn = false;//!((temp = getTheText(fileReader, "'")).endsWith("'"));
-                return "'"+temp;
+                return temp;
             }
         } catch (IOException e) {
             System.out.println();
@@ -210,7 +164,7 @@ public class Analyser {
         String temp = "";
         bufferedReader.mark(2);
         while (((input = bufferedReader.read())!=-1) &&
-                !(temp.endsWith(end)||(temp.endsWith("\n")&&(stringOn||charOn)))) {
+                !((temp.endsWith(end)&&!(temp.endsWith("\\"+end)))||(temp.endsWith("\n")&&(stringOn||charOn)))) {
             temp+=(char)input;
             bufferedReader.mark(2);
         }
@@ -219,19 +173,81 @@ public class Analyser {
     }
     private Token resetFlags(BufferedReader bufferedReader, String input){
         String temp;
-        if(!(temp = getCommentOrString(bufferedReader)).endsWith(stringOn?"\"":starCommentOn?"*/":
-                slashCommentOn?"\n":charOn?"'":"")) {
-            return new Token(TokenType.UNDEFINED, input+temp);
-        }
-        return new Token(input.startsWith("/")?TokenType.COMMENT:TokenType.LITERAL, input+temp);
+        return new Token((temp = getCommentOrString(bufferedReader)).endsWith(stringOn?"\"":starCommentOn?"*/":
+                slashCommentOn?"\n":charOn?"'":"")?input.startsWith("/")?TokenType.COMMENT:TokenType.LITERAL:
+                TokenType.UNDEFINED, input+temp);
+
     }
-    private String setFlags(String input){
+    private boolean setFlags(String input){
         stringOn = input.startsWith("\"");
         slashCommentOn = input.startsWith("//");
         starCommentOn = input.startsWith("/*");
         charOn = input.startsWith("'");
-        return (stringOn||slashCommentOn||starCommentOn||charOn)?
-                input.replaceAll("(//)|(/\\*)|\"|'",""):input;
+        return (stringOn||slashCommentOn||starCommentOn||charOn);
+    }
+    private Token multiCharOperator(BufferedReader bufferedReader, String temp) throws IOException {
+        bufferedReader.mark(4);
+        temp+=((char)bufferedReader.read());
+        if (setFlags(temp)) {
+            return resetFlags(bufferedReader, temp);
+        }
+        if(temp.matches("<<|>>")){
+            bufferedReader.mark(2);
+            temp+=((char)bufferedReader.read());
+            if(operators.contains(temp)){
+                return new Token(TokenType.OPERATOR, temp);
+            }
+            temp = temp.substring(0, temp.length()-1);
+            bufferedReader.reset();
+        }
+        if(operators.contains(temp)){
+            return new Token(TokenType.OPERATOR, temp);
+        }
+        bufferedReader.reset();
+        return null;
+    }
+    private Token checkItAll(BufferedReader bufferedReader, String temp, int input) throws IOException {
+        Token token;
+        temp += (char) input;
+        if((token = checkSeparator(bufferedReader, temp, input))!=null){
+            return token;
+        }
+        if((!temp.equals(""))&&separators.contains((char)input+"")){
+            bufferedReader.reset();
+            return null;
+        }
+        if(temp.matches("^[-+]?\\d*\\.?\\d+([eE][-+]\\d+)?$")){
+            temp = getTheNumber(bufferedReader, temp);
+            return new Token(TokenType.LITERAL, temp);
+        }
+        if((token = checkOperator(bufferedReader, temp, input))!=null){
+            return token;
+        }
+        if((!temp.equals(""))&&operators.contains((char)input+"")){
+            bufferedReader.reset();
+            return null;
+        }
+        return new Token(TokenType.UNDEFINED, temp);
+    }
+    private Token checkSeparator(BufferedReader bufferedReader, String temp, int input){
+        if (setFlags(temp)) {
+            return resetFlags(bufferedReader, temp);
+        }
+        if (separators.contains(temp)) {
+            return new Token(TokenType.SEPARATOR, (char)input+"");
+        }
+        return null;
+    }
+    private Token checkOperator(BufferedReader bufferedReader, String temp, int input) throws IOException {
+        Token token;
+        if((temp).matches("[-!%*^<>+/|&]")&&
+                (token = multiCharOperator(bufferedReader, temp))!=null){// */;
+            return token;
+        }
+        if(operators.contains(temp)){
+            return new Token(TokenType.OPERATOR, temp);
+        }
+        return null;
     }
 }
 /*

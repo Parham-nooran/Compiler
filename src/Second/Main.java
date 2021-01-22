@@ -16,7 +16,7 @@ public class Main {
     private static ArrayList<String> separators = new ArrayList<>(Arrays.asList(";", ",", ".", "(", ")", "[", "]", "{",
             "}"));//, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""));
     private static ArrayList<String> operators = new ArrayList<>(Arrays.asList("+", "-", "*", "/", "=", "<", ">",
-            "^", "<=", ">=", "+=", "-=", "/=", "*=", "%=", "^=", "<<=", ">>=", ">>>>=", "", "!=", "==",
+            "^", "<=", ">=", "+=", "-=", "/=", "*=", "%=", "^=", "<<=", ">>=", ">>>>=", "", "!=", "==", "|=", "&=",
             "%", "|", "&", "||", "&&", "++", "--", "<<", ">>", "?", "!", ":"));
     //private static ArrayList<String> literals = new ArrayList<>(Arrays.asList("", "", "", "", "", "", "", "", ""));
     private static ArrayList<String> comments = new ArrayList<>(Arrays.asList("/*", "*/", "//"));
