@@ -1,4 +1,4 @@
-package First;
+package first;
 
 import java.io.File;
 import java.io.IOException;

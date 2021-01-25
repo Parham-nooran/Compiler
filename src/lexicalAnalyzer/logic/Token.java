@@ -1,4 +1,4 @@
-package Second;
+package lexicalAnalyzer.logic;
 
 public class Token {
     private TokenType tokenType;

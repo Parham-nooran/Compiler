@@ -1,4 +1,4 @@
-package Second;
+package lexicalAnalyzer.logic;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,7 +12,6 @@ public class Analyser {
     private ArrayList<String> keywords;
     private ArrayList<String> separators;
     private ArrayList<String> operators;
-    private ArrayList<String> comments;
     private File file;
     private boolean slashCommentOn = false;
     private boolean starCommentOn = false;
@@ -20,19 +19,15 @@ public class Analyser {
     private boolean charOn = false;
 
     public Analyser(ArrayList<String> identifiers, ArrayList<String> keywords, ArrayList<String> separators,
-                    ArrayList<String> operator, ArrayList<String> comments, File file) {
+                    ArrayList<String> operator, File file) {
         this.identifiers = identifiers;
         this.keywords = keywords;
         this.separators = separators;
         this.operators = operator;
-        this.comments = comments;
         this.file = file;
     }
 
-    public void analyse(){
-        scan(this.file);
-    }
-    private void scan(File file){
+    public void scan(File file){
         try (
                 FileReader fileReader = new FileReader(file);
                 BufferedReader bufferedReader = new BufferedReader(fileReader)
@@ -41,6 +36,7 @@ public class Analyser {
             while (bufferedReader.read() != -1) {
                 bufferedReader.reset();
                 Token token = getNextToken(bufferedReader);
+                assert token != null;
                 String tokenType = token.getTokenType().toString().toLowerCase();
                 System.out.println(token.getTokenValue()+" is "+tokenType);//(tokenType.substring(0, 1).matches("[iIoOaAuUeE]")?"an ":"a ") +
                 bufferedReader.mark(1);
@@ -50,7 +46,7 @@ public class Analyser {
             e.printStackTrace();
         }
     }
-    private Token getNextToken(BufferedReader bufferedReader) {
+    public Token getNextToken(BufferedReader bufferedReader) {
         try{
             bufferedReader.mark(4);
             return searchForToken(bufferedReader);
@@ -199,6 +195,9 @@ public class Analyser {
     private Token checkConditions(BufferedReader bufferedReader, String temp, int input) throws IOException {
         Token token;
         temp += (char) input;
+        if(temp.equals("@")){
+            return new Token(TokenType.ANNOTATION, getAnnotation(bufferedReader));
+        }
         if(temp.matches("^\\d+$")||(temp.matches("^[-+]?\\d*\\.?$")&&checkNumber(bufferedReader))){
             return new Token(TokenType.LITERAL, getTheNumber(bufferedReader, temp));
         }
@@ -217,6 +216,17 @@ public class Analyser {
             return null;
         }
         return new Token(TokenType.UNDEFINED, temp);
+    }
+    private String getAnnotation(BufferedReader bufferedReader) throws IOException {
+        String temp = "";
+        int input;
+        bufferedReader.mark(1);
+        while ((input = bufferedReader.read())!=-1&&!((char)input+"").matches("\\s")){
+            temp+=(char)input;
+            bufferedReader.mark(1);
+        }
+        bufferedReader.reset();
+        return "@"+temp;
     }
     private boolean checkNumber(BufferedReader bufferedReader) throws IOException {
         boolean result;
