@@ -1,18 +1,32 @@
-package firstAndFollow;
+package firstAndFollow.logic;
+
+import firstAndFollow.graphics.NonTerminal;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
+    private static ArrayList<NonTerminal> nonTerminals;
+
+    public Main() {
+        nonTerminals = new ArrayList<>();
+        start();
+    }
+
     public static void main(String[] args) {
+       start();
+    }
+    private static void start(){
         File file = getTheFile();
         String startingSymbol = getTheStartingSymbol(file);
         Computer computer = startComputer(file, startingSymbol);
         System.out.println("Non terminal"+"          First");
         for(String nonTerminal:computer.getFirsts().keySet()){
             System.out.print(nonTerminal + "  :               ");
+            nonTerminals.add(new NonTerminal(nonTerminal, computer.getFirsts().get(nonTerminal),
+                    computer.getFollows().get(nonTerminal)));
             for(String terminal:computer.getFirsts().get(nonTerminal)) {
                 System.out.print(terminal+"   ");
             }
@@ -27,6 +41,9 @@ public class Main {
             }
             System.out.println();
         }
+    }
+    public ArrayList<NonTerminal> getNonTerminals() {
+        return new ArrayList<>(nonTerminals);
     }
 
     private static File getTheFile(){
@@ -57,6 +74,7 @@ public class Main {
         } catch (NotContextFreeException e) {
             System.out.println(e.getMessage());
         }
+        assert computer != null;
         computer.computeFirst();
         computer.computeFollow(startingSymbol);
         return computer;

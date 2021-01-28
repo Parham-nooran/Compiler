@@ -1,4 +1,4 @@
-package firstAndFollow;
+package firstAndFollow.logic;
 
 public class NotContextFreeException extends Exception {
     /**

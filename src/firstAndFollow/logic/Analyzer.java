@@ -1,4 +1,4 @@
-package firstAndFollow;
+package firstAndFollow.logic;
 
 import java.io.File;
 import java.io.IOException;

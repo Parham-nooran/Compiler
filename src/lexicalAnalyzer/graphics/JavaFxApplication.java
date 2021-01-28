@@ -16,81 +16,80 @@ import lexicalAnalyzer.Main;
 import lexicalAnalyzer.logic.Token;
 import lexicalAnalyzer.logic.TokenType;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-
+/**
+ * Is designed to show the table of tokens which its tokens are obtained from the analyser of the Main class.
+ */
 public class JavaFxApplication extends Application {
     private ObservableList<Token> data = FXCollections.observableArrayList();
-    private ObservableList<TokenType> data2 = FXCollections.observableArrayList();
+
+    /**
+     * Calls the launch method passing the args String array as the argument.
+     * @param args
+     * the arguments that it passes to the launch method.
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
+    /**
+     * Shows the table of the tokens with two columns in a new made scene.
+     * @param stage
+     * the stage that its scene would be set in the method.
+     */
     public void start(Stage stage) {
         Pane pane = new Pane();
-        Scene scene = new Scene(pane, 1200, 560, Color.rgb(240, 240, 240));
-        //Main.start();
-        TableView table = new TableView();
-        table.setEditable(true);
-        table.relocate(30, 40);
-        table.setPrefSize(320, 500);
-        TableView table2 = new TableView();
-
-        table2.setItems(data2);
-        table2.relocate(390, 40);
-        table2.setPrefSize(750, 500);
-        try (
-                FileReader fileReader = new FileReader(new Main().getFile());
-                BufferedReader bufferedReader = new BufferedReader(fileReader)
-        ) {
-            makeTable(table2, "IDENTIFIER", "KEYWORD",
-                    "SEPARATOR", "OPERATOR", "LITERAL", "COMMENT", "CONSTANT", "ANNOTATION", "UNDEFINED");
-            TableColumn column1 = new TableColumn("Token Type");
-            column1.setCellValueFactory(new PropertyValueFactory<Token, TokenType>("tokenType"));
-            TableColumn column2 = new TableColumn("Token Value");
-            column2.setCellValueFactory(new PropertyValueFactory<Token, String>("tokenValue"));
-            table.getColumns().addAll(column1, column2);
-            fillColumns(bufferedReader);
-        } catch (IOException e){
-            System.out.println("Something went wrong while initializing the fileReader");
-            e.printStackTrace();
-        }
-        Label label  = new Label("Token");
-        label.setLayoutX(50);
-        label.setLayoutY(50);
-        table.setItems(data);
-        pane.getChildren().addAll(table, table2);
+        Scene scene = new Scene(pane, 600, 600, Color.rgb(240, 240, 240));
+        TableView table = initializeTable();
+        fillColumns();
+        Label label = initializeLabel("Tokens");
+        pane.getChildren().addAll(table, label);
         stage.initStyle(StageStyle.UTILITY);
         stage.setTitle("Lexical Analyser");
         stage.setScene(scene);
         stage.show();
     }
-    private void makeTable(TableView table, String... columns) {
-        ArrayList<TableColumn> tableColumns = new ArrayList<>();
-        for (int i=0;i<columns.length;i++){
-            TableColumn temp = new TableColumn(columns[i]);
-            tableColumns.add(temp);
-            temp.setCellValueFactory(new PropertyValueFactory<TokenType, String>(columns[i]));
-        }
-        table.getColumns().addAll(tableColumns);
-    }
-    private void fillColumns(BufferedReader bufferedReader) throws IOException {
-        Token token;
-        while ((token = getNextToken(bufferedReader)) != null) {
-            data.add(token);
-            data2.add(token.getTokenType());
-        }
+
+    /**
+     * Fills the data observable list with the tokens from the token list of the Main class's analyser.
+     */
+    private void fillColumns(){
+        Main.start();
+        data.addAll(Main.getAnalyzer().getTokens());
     }
 
-    private Token getNextToken(BufferedReader bufferedReader) throws IOException {
-        bufferedReader.mark(1);
-        if (bufferedReader.read() == -1) {
-            return null;
-        }
-        bufferedReader.reset();
-        return Main.getAnalyzer().getNextToken(bufferedReader);
+    /**
+     * Puts a label on the coordinates 30, 30 of the scene named as the input string, title.
+     * @param title
+     * would be set as the label's title string.
+     * @return
+     * returns a label as specified above.
+     */
+    private Label initializeLabel(String title){
+        Label label  = new Label(title);
+        label.relocate(30, 30);
+        label.setScaleX(2);
+        label.setLayoutY(4);
+        label.setTextFill(Color.BLACK);
+        return label;
+    }
 
+    /**
+     * Makes a table with two columns named Token Type and Token Value and locates it in the scene and sets the
+     * ObservableList {@code data} as its data
+     * @return
+     * returns the table that it made as specified above.
+     */
+    private TableView initializeTable(){
+        TableView table = new TableView();
+        table.setEditable(true);
+        table.relocate(30, 40);
+        table.setPrefSize(500, 550);
+        TableColumn column1 = new TableColumn("Token Type");
+        column1.setCellValueFactory(new PropertyValueFactory<Token, TokenType>("tokenType"));
+        TableColumn column2 = new TableColumn("Token Value");
+        column2.setCellValueFactory(new PropertyValueFactory<Token, String>("tokenValue"));
+        table.getColumns().addAll(column1, column2);
+        table.setItems(data);
+        return table;
     }
 }

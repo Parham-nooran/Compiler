@@ -1,4 +1,4 @@
-package firstAndFollow;
+package firstAndFollow.logic;
 
 public class RuleSide {
     private String string;
